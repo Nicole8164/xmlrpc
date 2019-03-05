@@ -80,7 +80,7 @@ module XMLRPC # :nodoc:
     #
     # Parameter +timeout+ is the time to wait for a XML-RPC response, defaults to 30.
     def initialize(host=nil, path=nil, port=nil, proxy_host=nil, proxy_port=nil,
-                   user=nil, password=nil, use_ssl=nil, timeout=nil)
+                   user=nil, password=nil, use_ssl=nil, timeout=nil, proxy_user=nil, proxy_password=nil)
 
       @http_header_extra = nil
       @http_last_response = nil
@@ -92,6 +92,8 @@ module XMLRPC # :nodoc:
       @proxy_port = proxy_port
       @proxy_host ||= 'localhost' if @proxy_port != nil
       @proxy_port ||= 8080 if @proxy_host != nil
+      @proxy_user = proxy_user
+      @proxy_password = proxy_password
       @use_ssl    = use_ssl || false
       @timeout    = timeout || 30
 
@@ -111,7 +113,7 @@ module XMLRPC # :nodoc:
       @proxy_port = @proxy_port.to_i if @proxy_port != nil
 
       # HTTP object for synchronous calls
-      @http = net_http(@host, @port, @proxy_host, @proxy_port)
+      @http = net_http(@host, @port, @proxy_host, @proxy_port, @proxy_user, @proxy_password)
       @http.use_ssl = @use_ssl if @use_ssl
       @http.read_timeout = @timeout
       @http.open_timeout = @timeout
@@ -177,9 +179,8 @@ module XMLRPC # :nodoc:
       # convert all keys into lowercase strings
       h = {}
       hash.each { |k,v| h[k.to_s.downcase] = v }
-
       self.new(h['host'], h['path'], h['port'], h['proxy_host'], h['proxy_port'], h['user'], h['password'],
-               h['use_ssl'], h['timeout'])
+               h['use_ssl'], h['timeout'], h['proxy_user'], h['proxy_password'])
     end
 
     alias new_from_hash new3
@@ -429,8 +430,8 @@ module XMLRPC # :nodoc:
 
     private
 
-    def net_http(host, port, proxy_host, proxy_port)
-      Net::HTTP.new host, port, proxy_host, proxy_port
+    def net_http(host, port, proxy_host, proxy_port, proxy_user=nil, proxy_password=nil)
+      Net::HTTP.new host, port, proxy_host, proxy_port, proxy_user, proxy_password
     end
 
     def dup_net_http
